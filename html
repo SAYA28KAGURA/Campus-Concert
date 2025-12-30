@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>綻放校園演唱會 - 搶票系統</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 基礎重置與變數定義 */
+        :root {
+            --primary-color: #3a86ff;
+            --secondary-color: #8338ec;
+            --accent-color: #ff006e;
+            --light-gray: #f8f9fa;
+            --medium-gray: #e9ecef;
+            --dark-gray: #495057;
+            --bg-gray: #f5f5f7;
+            --star-color: #e0e0e0;
+            --text-color: #333333;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --border-radius: 12px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background-color: var(--bg-gray);
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* 背景效果 */
+        .stars-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .star {
+            position: absolute;
+            background-color: var(--star-color);
+            border-radius: 50%;
+            animation: twinkle 3s infinite alternate;
+        }
+        
+        @keyframes twinkle {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.8; }
+        }
+        
+        /* 導航欄 */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 5%;
+            background-color: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+        
+        .logo i {
+            margin-right: 8px;
+            color: var(--accent-color);
+        }
+        
+        .nav-links {
+            display: flex;
+            list-style: none;
+        }
+        
+        .nav-links li {
+            margin-left: 2rem;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: var(--dark-gray);
+            font-weight: 500;
+            transition: color 0.3s;
+            padding: 0.5rem 0;
+            position: relative;
+        }
+        
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+        
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--primary-color);
+            transition: width 0.3s;
+        }
+        
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+        
+        .ticket-btn {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 15px rgba(58, 134, 255, 0.3);
+        }
+        
+        .ticket-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(58, 134, 255, 0.4);
+        }
+        
+        .mobile-menu {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* 輪播圖 */
+        .carousel {
+            position: relative;
+            width: 90%;
+            max-width: 1200px;
+            margin: 2rem auto;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        
+        .carousel-slides {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+        }
+        
+        .carousel-slide {
+            min-width: 100%;
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+        }
+        
+        .slide1 {
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), 
+                        url('https://images.unsplash.com/photo-1501281668745-f6f2615d4a7a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .slide2 {
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), 
+                        url('https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .slide3 {
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), 
+                        url('https://images.unsplash.com/photo-1470225620780-dba8ba36b745?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .carousel-slide h2 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .carousel-slide p {
+            font-size: 1.2rem;
+            max-width: 600px;
+        }
+        
+        .carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            transition: background 0.3s;
+        }
+        
+        .carousel-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .prev-btn {
+            left: 20px;
+        }
+        
+        .next-btn {
+            right: 20px;
+        }
+        
+        .carousel-dots {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+        }
+        
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            margin: 0 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .dot.active {
+            background: white;
+        }
+        
+        /* 主要內容 */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        section {
+            margin-bottom: 4rem;
+            padding: 3rem;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+        
+        .section-header h2 {
+            font-size: 2.2rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .section-header p {
+            color: var(--dark-gray);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* 演唱會資訊 */
+        .concert-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .info-card {
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            background-color: var(--light-gray);
+            transition: transform 0.3s;
+        }
+        
+        .info-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .info-card i {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .info-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--dark-gray);
+        }
+        
+        /* 表單區域 */
+        .ticket-form {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--dark-gray);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid var(--medium-gray);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border 0.3s, box-shadow 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(58, 134, 255, 0.1);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        
+        .form-submit {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            margin-top: 1rem;
+        }
+        
+        .form-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(58, 134, 255, 0.4);
+        }
+        
+        /* 學生會連結 */
+        .student-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .student-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.5rem;
+            background-color: var(--light-gray);
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            color: var(--dark-gray);
+            transition: transform 0.3s, background-color 0.3s;
+        }
+        
+        .student-link:hover {
+            transform: translateY(-5px);
+            background-color: var(--medium-gray);
+        }
+        
+        .student-link i {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        /* 頁尾 */
+        footer {
+            background-color: #1a1a1a;
+            color: white;
+            padding: 3rem 5%;
+            margin-top: 4rem;
+        }
+        
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .footer-section h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+            color: white;
+        }
+        
+        .footer-section ul {
+            list-style: none;
+        }
+        
+        .footer-section ul li {
+            margin-bottom: 0.75rem;
+        }
+        
+        .footer-section ul li a {
+            color: #cccccc;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-section ul li a:hover {
+            color: white;
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .social-links a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background-color: #333333;
+            border-radius: 50%;
+            color: white;
+            transition: background-color 0.3s;
+        }
+        
+        .social-links a:hover {
+            background-color: var(--primary-color);
+        }
+        
+        .copyright {
+            text-align: center;
+            padding-top: 2rem;
+            margin-top: 2rem;
+            border-top: 1px solid #333333;
+            color: #999999;
+            font-size: 0.9rem;
+        }
+        
+        /* 響應式設計 */
+        @media (max-width: 992px) {
+            .carousel-slide h2 {
+                font-size: 2.5rem;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                flex-direction: column;
+                background-color: white;
+                padding: 1rem 0;
+                box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            }
+            
+            .nav-links.active {
+                display: flex;
+            }
+            
+            .nav-links li {
+                margin: 0;
+                text-align: center;
+            }
+            
+            .nav-links a {
+                display: block;
+                padding: 1rem;
+            }
+            
+            .mobile-menu {
+                display: block;
+            }
+            
+            .carousel-slide {
+                height: 400px;
+            }
+            
+            .carousel-slide h2 {
+                font-size: 2rem;
+            }
+            
+            section {
+                padding: 2rem 1.5rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .carousel-slide {
+                height: 300px;
+            }
+            
+            .carousel-slide h2 {
+                font-size: 1.8rem;
+            }
+            
+            .section-header h2 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 背景 -->
+    <div class="stars-bg" id="stars-bg"></div>
+    
+    <!-- 導航欄 -->
+    <nav>
+        <div class="logo">
+            <i class="fas fa-star"></i>
+            <span>綻放校園演唱會</span>
+        </div>
+        
+        <ul class="nav-links">
+            <li><a href="#home">首頁</a></li>
+            <li><a href="#info">演唱會資訊</a></li>
+            <li><a href="#ticket">購票</a></li>
+            <li><a href="#lineup">演出陣容</a></li>
+            <li><a href="#student-union">學生會</a></li>
+        </ul>
+        
+        <button class="ticket-btn" onclick="scrollToTicket()">立即搶票</button>
+        
+        <div class="mobile-menu" id="mobile-menu">
+            <i class="fas fa-bars"></i>
+        </div>
+    </nav>
+    
+    <!-- 輪播圖 -->
+    <div class="carousel">
+        <div class="carousel-slides">
+            <div class="carousel-slide slide1">
+                <h2>綻放校園演唱會</h2>
+                <p>年度最盛大的音樂盛典，帶給你前所未有的視聽體驗！</p>
+            </div>
+            <div class="carousel-slide slide2">
+                <h2>超強卡司陣容</h2>
+                <p>知名歌手與樂團齊聚一堂，打造最震撼的音樂之夜</p>
+            </div>
+            <div class="carousel-slide slide3">
+                <h2>限量早鳥優惠</h2>
+                <p>前500名購票者可享7折優惠，學生另有專屬折扣</p>
+            </div>
+        </div>
+        
+        <button class="carousel-btn prev-btn" onclick="prevSlide()">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="carousel-btn next-btn" onclick="nextSlide()">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+        
+        <div class="carousel-dots">
+            <div class="dot active" onclick="goToSlide(0)"></div>
+            <div class="dot" onclick="goToSlide(1)"></div>
+            <div class="dot" onclick="goToSlide(2)"></div>
+        </div>
+    </div>
+    
+    <!-- 主要內容 -->
+    <main>
+        <!-- 演唱會資訊 -->
+        <section id="info">
+            <div class="section-header">
+                <h2>演唱會資訊</h2>
+                <p>活動詳細資訊與注意事項，請務必仔細閱讀</p>
+            </div>
+            
+            <div class="concert-info">
+                <div class="info-card">
+                    <i class="fas fa-calendar-alt"></i>
+                    <h3>日期與時間</h3>
+                    <p>2026年05月06日 (星期三)</p>
+                    <p>入場時間：下午5:00</p>
+                    <p>演出時間：晚上6:30 - 10:00</p>
+                </div>
+                
+                <div class="info-card">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <h3>活動地點</h3>
+                    <p>文藻外語大學 化雨堂</p>
+                    <p>地址：807高雄市三民區民族一路900號旁地下一樓化雨堂</p>
+                    <p>交通：由鼎金系統交流道(南下) 右線【(北上)左線】左營(362公里出口)下高速公路,行經大中路,通過高雄榮民總醫院後,向左轉進入民族一路,直行約1公里(左側)即到達本校。</p>
+                </div>
+                
+                <div class="info-card">
+                    <i class="fas fa-ticket-alt"></i>
+                    <h3>票價資訊</h3>
+                    <p>早鳥票：$450 (限量500張)</p>
+                    <p>學生票：$600 (需驗證學生證)</p>
+                    <p>一般票：$800</p>
+                    <p>VIP票：$1200 (含周邊商品)</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 購票表單 -->
+        <section id="ticket">
+            <div class="section-header">
+                <h2>購票表單</h2>
+                <p>請填寫以下資料完成購票流程，每個帳號限購4張</p>
+            </div>
+            
+            <form class="ticket-form" id="ticketForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name">姓名 *</label>
+                        <input type="text" id="name" class="form-control" placeholder="請輸入您的姓名" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="studentId">學號</label>
+                        <input type="text" id="studentId" class="form-control" placeholder="輸入學號可享學生優惠">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email">電子郵件 *</label>
+                        <input type="email" id="email" class="form-control" placeholder="example@email.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone">手機號碼 *</label>
+                        <input type="tel" id="phone" class="form-control" placeholder="09XX-XXX-XXX" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="ticketType">票種選擇 *</label>
+                    <select id="ticketType" class="form-control" required>
+                        <option value="">請選擇票種</option>
+                        <option value="early-bird">早鳥票 $450</option>
+                        <option value="student">學生票 $600</option>
+                        <option value="general">一般票 $800</option>
+                        <option value="vip">VIP票 $1200</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="quantity">購買數量 (最多4張) *</label>
+                    <input type="number" id="quantity" class="form-control" min="1" max="4" value="1" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">備註</label>
+                    <textarea id="notes" class="form-control" rows="3" placeholder="如有特殊需求請在此備註"></textarea>
+                </div>
+                
+                <button type="submit" class="form-submit">提交訂單</button>
+            </form>
+        </section>
+        
+        <!-- 學生會連結 -->
+        <section id="student-union">
+            <div class="section-header">
+                <h2>學生會相關連結</h2>
+                <p>校園演唱會主辦單位 - 學生會各部門資訊與服務</p>
+            </div>
+            
+            <div class="student-links">
+                <a href="#" class="student-link">
+                    <i class="fas fa-bullhorn"></i>
+                    <h3>活動公告</h3>
+                    <p>最新演唱會消息與更新</p>
+                </a>
+                
+                <a href="#" class="student-link">
+                    <i class="fas fa-question-circle"></i>
+                    <h3>常見問題</h3>
+                    <p>購票與活動相關問題解答</p>
+                </a>
+                
+                <a href="#" class="student-link">
+                    <i class="fas fa-users"></i>
+                    <h3>學生活動中心志工招募</h3>
+                    <p>加入我們一起籌辦活動</p>
+                </a>
+                
+                <a href="#" class="student-link">
+                    <i class="fas fa-handshake"></i>
+                    <h3>合作提案</h3>
+                    <p>贊助與合作機會</p>
+                </a>
+                
+                <a href="#" class="student-link">
+                    <i class="fas fa-file-contract"></i>
+                    <h3>活動章程</h3>
+                    <p>詳細活動規則與條款</p>
+                </a>
+                
+                <a href="#" class="student-link">
+                    <i class="fas fa-comments"></i>
+                    <h3>聯絡我們</h3>
+                    <p>有任何問題請隨時聯繫</p>
+                </a>
+            </div>
+        </section>
+    </main>
+    
+    <!-- 頁尾 -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>綻放校園演唱會</h3>
+                <p>由學生會主辦的年度音樂盛事，為校園生活增添色彩與活力。</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-youtube"></i></a>
+                </div>
+            </div>
+            
+            <div class="footer-section">
+                <h3>快速連結</h3>
+                <ul>
+                    <li><a href="#home">首頁</a></li>
+                    <li><a href="#info">演唱會資訊</a></li>
+                    <li><a href="#ticket">購票</a></li>
+                    <li><a href="#lineup">演出陣容</a></li>
+                    <li><a href="#student-union">學生會</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h3>聯絡資訊</h3>
+                <ul>
+                    <li><i class="fas fa-map-marker-alt"></i> 807高雄市三民區民族一路900號</li>
+                    <li><i class="fas fa-phone"></i> (02) 1234-5678</li>
+                    <li><i class="fas fa-envelope"></i> concert@university.edu</li>
+                    <li><i class="fas fa-clock"></i> 週一至週五 9:00-17:00</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="copyright">
+            <p>© 2026 綻放校園演唱會 版權所有 | 設計：文藻外語大學學生會行政中心設計部 | 圖片來源：Unsplash</p>
+        </div>
+    </footer>
+    
+    <script>
+        // 生成背景
+        function createStars() {
+            const starsBg = document.getElementById('stars-bg');
+            const starCount = 150;
+            
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                
+                // 隨機大小與位置
+                const size = Math.random() * 3 + 1;
+                const x = Math.random() * 100;
+                const y = Math.random() * 100;
+                const delay = Math.random() * 5;
+                
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.left = `${x}%`;
+                star.style.top = `${y}%`;
+                star.style.animationDelay = `${delay}s`;
+                
+                starsBg.appendChild(star);
+            }
+        }
+        
+        // 輪播圖功能
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.carousel-slide');
+        const dots = document.querySelectorAll('.dot');
+        
+        function showSlide(n) {
+            if (n >= slides.length) currentSlide = 0;
+            if (n < 0) currentSlide = slides.length - 1;
+            
+            const carouselSlides = document.querySelector('.carousel-slides');
+            carouselSlides.style.transform = `translateX(-${currentSlide * 100}%)`;
+            
+            // 更新指示點
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSlide);
+            });
+        }
+        
+        function nextSlide() {
+            currentSlide++;
+            showSlide(currentSlide);
+        }
+        
+        function prevSlide() {
+            currentSlide--;
+            showSlide(currentSlide);
+        }
+        
+        function goToSlide(n) {
+            currentSlide = n;
+            showSlide(currentSlide);
+        }
+        
+        // 自動輪播
+        let slideInterval = setInterval(nextSlide, 5000);
+        
+        // 暫停輪播當用戶互動時
+        const carousel = document.querySelector('.carousel');
+        carousel.addEventListener('mouseenter', () => clearInterval(slideInterval));
+        carousel.addEventListener('mouseleave', () => {
+            slideInterval = setInterval(nextSlide, 5000);
+        });
+        
+        // 表單提交
+        document.getElementById('ticketForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // 簡單的表單驗證
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const ticketType = document.getElementById('ticketType').value;
+            
+            if (!name || !email || !ticketType) {
+                alert('請填寫所有必填欄位！');
+                return;
+            }
+            
+            // 模擬提交成功
+            alert('訂單提交成功！我們將在24小時內發送確認郵件至您的信箱。');
+            this.reset();
+        });
+        
+        // 滾動到購票區域
+        function scrollToTicket() {
+            document.getElementById('ticket').scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+        
+        // 行動裝置選單切換
+        document.getElementById('mobile-menu').addEventListener('click', function() {
+            document.querySelector('.nav-links').classList.toggle('active');
+        });
+        
+        // 點擊連結關閉行動選單
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                document.querySelector('.nav-links').classList.remove('active');
+            });
+        });
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            createStars();
+            showSlide(currentSlide);
+        });
+    </script>
+</body>
+</html>
